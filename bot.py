@@ -120,7 +120,6 @@ def get_cloud_signature():
         parts.append(soup.get_text(" ", strip=True)[:2000])
     return "\n".join(parts)
 
-
 def check_cloud_and_notify():
     global last_cloud_signature
     sig = get_cloud_signature()
