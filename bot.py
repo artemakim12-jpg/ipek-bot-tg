@@ -11,14 +11,28 @@ from calendar import monthrange
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import CommandStart
 from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton,
     CallbackQuery, Message
 )
 
-TG_TOKEN = os.getenv("TG_TOKEN")
+# --- НАСТРОЙКИ ПРОКСИ (если нужно) ---
+# Если запускаете в Нидерландах, прокси не нужен.
+# Если в России — раскомментируйте и укажите свой прокси:
+# PROXY_URL = "socks5://127.0.0.1:1080"
+# session = AiohttpSession(proxy=PROXY_URL)
+# bot = Bot(token=os.getenv("TG_TOKEN"), session=session, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+# Для работы БЕЗ прокси (в Нидерландах):
+bot = Bot(
+    token=os.getenv("TG_TOKEN"),
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
+dp = Dispatcher()
+
 ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "0"))
 
 TARGET_GROUP = "И-25-1"
@@ -48,9 +62,6 @@ MONTHS_PER_PAGE = 6
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-bot = Bot(token=TG_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-dp = Dispatcher()
 
 last_cloud_signature = None
 loop = None
@@ -111,7 +122,6 @@ def get_cloud_signature():
     soup = BeautifulSoup(r.text, "html.parser")
     parts = []
     for tr in soup.find_all("tr"):
-        ...
         cells = tr.find_all(["td", "th"])
         if len(cells) < 2:
             continue
@@ -122,6 +132,7 @@ def get_cloud_signature():
     if not parts:
         parts.append(soup.get_text(" ", strip=True)[:2000])
     return "\n".join(parts)
+
 
 def check_cloud_and_notify():
     global last_cloud_signature
@@ -347,9 +358,7 @@ def parse_schedule_for_date_text(dt_text):
                 matched.append(t)
                 break
     return matched if matched else tables
-
-
-def make_snapshot_for_day(target):
+    def make_snapshot_for_day(target):
     tables = parse_schedule_for_date(target)
     if not tables:
         return []
@@ -564,6 +573,8 @@ def get_days_keyboard(month_name, range_label, dates, page=1):
     rows.append([InlineKeyboardButton(text=f"📅 Диапазоны {month_name}", callback_data=f"back_ranges:{month_name}")])
     rows.append([InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 @dp.message(CommandStart())
 async def start_handler(message: Message):
     await message.answer(
@@ -737,5 +748,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())    
+    asyncio.run(main())
     
