@@ -15,7 +15,6 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton,
-    ReplyKeyboardMarkup, KeyboardButton,
     CallbackQuery, Message
 )
 
@@ -55,7 +54,6 @@ dp = Dispatcher()
 
 last_cloud_signature = None
 loop = None
-user_state = {}
 schedule_snapshot = {}
 
 
@@ -100,8 +98,8 @@ def extract_month_from_text(t):
         if name in tl:
             return n
     return None
-    def get_cloud_signature():
-        h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+def get_cloud_signature():
+    h = {"User-Agent": "Mozilla/5.0"}
     try:
         r = requests.get(CLOUD_URL, headers=h, timeout=20)
         r.raise_for_status()
@@ -495,16 +493,12 @@ def format_distance_message():
 
 def get_main_keyboard():
     k = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="📅 Календарь", callback_data="open_calendar"),
-        ],
+        [InlineKeyboardButton(text="📅 Календарь", callback_data="open_calendar")],
         [
             InlineKeyboardButton(text="📆 Сегодня", callback_data="quick:today"),
             InlineKeyboardButton(text="📆 Завтра", callback_data="quick:tomorrow"),
         ],
-        [
-            InlineKeyboardButton(text="🎓 Дистанционное обучение", callback_data="distance"),
-        ],
+        [InlineKeyboardButton(text="🎓 Дистанционное обучение", callback_data="distance")],
     ])
     return k
 
@@ -568,8 +562,6 @@ def get_days_keyboard(month_name, range_label, dates, page=1):
     rows.append([InlineKeyboardButton(text=f"📅 Диапазоны {month_name}", callback_data=f"back_ranges:{month_name}")])
     rows.append([InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
-
-
 @dp.message(CommandStart())
 async def start_handler(message: Message):
     await message.answer(
@@ -743,4 +735,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main())    
+    
