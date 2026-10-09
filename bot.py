@@ -11,58 +11,31 @@ from calendar import monthrange
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import (
-    InlineKeyboardMarkup, InlineKeyboardButton,
-    CallbackQuery, Message
-)
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 
-# --- НАСТРОЙКИ ПРОКСИ (если нужно) ---
-# Если запускаете в Нидерландах, прокси не нужен.
-# Если в России — раскомментируйте и укажите свой прокси:
-# PROXY_URL = "socks5://127.0.0.1:1080"
-# session = AiohttpSession(proxy=PROXY_URL)
-# bot = Bot(token=os.getenv("TG_TOKEN"), session=session, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-# Для работы БЕЗ прокси (в Нидерландах):
-bot = Bot(
-    token=os.getenv("TG_TOKEN"),
-    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-)
+bot = Bot(token=os.getenv("TG_TOKEN"), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "0"))
-
 TARGET_GROUP = "И-25-1"
 TARGET_COURSE = "2 курс"
 CLOUD_URL = "https://cloud.pilot-ipek.ru/s/7HDT8FZGBd7J5cs"
-
 BASE_URL = "https://www.pilot-ipek.ru"
 API_URL = f"{BASE_URL}/api/get_list"
-
 CHECK_INTERVAL = 300
 DAYS_AHEAD = 7
 CACHE_FILE = "schedule_cache.json"
 
-MONTHS_RU = {
-    1: "января", 2: "февраля", 3: "марта", 4: "апреля",
-    5: "мая", 6: "июня", 7: "июля", 8: "августа",
-    9: "сентября", 10: "октября", 11: "ноября", 12: "декабря",
-}
-MONTHS_NOM_RU = {
-    1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель",
-    5: "Май", 6: "Июнь", 7: "Июль", 8: "Август",
-    9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь",
-}
+MONTHS_RU = {1: "января", 2: "февраля", 3: "марта", 4: "апреля", 5: "мая", 6: "июня", 7: "июля", 8: "августа", 9: "сентября", 10: "октября", 11: "ноября", 12: "декабря"}
+MONTHS_NOM_RU = {1: "Январь", 2: "Февраль", 3: "Март", 4: "Апрель", 5: "Май", 6: "Июнь", 7: "Июль", 8: "Август", 9: "Сентябрь", 10: "Октябрь", 11: "Ноябрь", 12: "Декабрь"}
 MONTH_NUM_BY_NAME = {name: num for num, name in MONTHS_NOM_RU.items()}
 DATES_PER_PAGE = 3
 MONTHS_PER_PAGE = 6
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 last_cloud_signature = None
 loop = None
 schedule_snapshot = {}
@@ -146,17 +119,9 @@ def check_cloud_and_notify():
     if sig != last_cloud_signature:
         last_cloud_signature = sig
         save_cache()
-        msg = (
-            "🔔 Новые материалы в дистанционном обучении!\n\n"
-            f"📚 Группа {TARGET_GROUP} · {TARGET_COURSE}\n"
-            f"🔗 {CLOUD_URL}\n\n"
-            f"Откройте: {TARGET_COURSE} → {TARGET_GROUP}"
-        )
+        msg = "🔔 Новые материалы в дистанционном обучении!\n\n" + f"📚 Группа {TARGET_GROUP} · {TARGET_COURSE}\n" + f"🔗 {CLOUD_URL}\n\n" + f"Откройте: {TARGET_COURSE} → {TARGET_GROUP}"
         try:
-            asyncio.run_coroutine_threadsafe(
-                bot.send_message(ADMIN_CHAT_ID, msg, disable_web_page_preview=True),
-                loop,
-            )
+            asyncio.run_coroutine_threadsafe(bot.send_message(ADMIN_CHAT_ID, msg, disable_web_page_preview=True), loop)
             logger.info("Уведомление об облаке отправлено.")
         except Exception as e:
             logger.error(f"Ошибка отправки уведомления: {e}")
@@ -250,11 +215,7 @@ def filter_dates_by_range(dates, s, e):
 
 def get_available_ranges(month_name, dates):
     last = get_last_day_of_month(month_name)
-    ranges = [
-        ("1–10", filter_dates_by_range(dates, 1, 10)),
-        ("11–20", filter_dates_by_range(dates, 11, 20)),
-        (f"21–{last}", filter_dates_by_range(dates, 21, 0)),
-    ]
+    ranges = [("1–10", filter_dates_by_range(dates, 1, 10)), ("11–20", filter_dates_by_range(dates, 11, 20)), (f"21–{last}", filter_dates_by_range(dates, 21, 0))]
     return [(l, i) for l, i in ranges if i]
 
 
@@ -358,7 +319,9 @@ def parse_schedule_for_date_text(dt_text):
                 matched.append(t)
                 break
     return matched if matched else tables
-    def make_snapshot_for_day(target):
+
+
+def make_snapshot_for_day(target):
     tables = parse_schedule_for_date(target)
     if not tables:
         return []
@@ -447,10 +410,7 @@ def check_schedule_changes():
     logger.info(f"Найдено изменений: {len(changes)} строк. Отправляем...")
     msg = format_change_message(changes)
     try:
-        asyncio.run_coroutine_threadsafe(
-            bot.send_message(ADMIN_CHAT_ID, msg, disable_web_page_preview=True),
-            loop,
-        )
+        asyncio.run_coroutine_threadsafe(bot.send_message(ADMIN_CHAT_ID, msg, disable_web_page_preview=True), loop)
         logger.info("Уведомление об изменениях отправлено.")
     except Exception as e:
         logger.error(f"Ошибка отправки: {e}")
@@ -491,33 +451,20 @@ def format_multiple_tables(tables):
 
 
 def format_distance_message():
-    return (
-        "🎓 Дистанционное обучение\n\n"
-        f"📚 Материалы для группы {TARGET_GROUP} ({TARGET_COURSE})\n\n"
-        f"🔗 {CLOUD_URL}\n\n"
-        f"Что делать:\n"
-        f"1. Нажмите «{TARGET_COURSE}»\n"
-        f"2. Затем «{TARGET_GROUP}»\n"
-        f"3. Внутри — файлы и задания"
-    )
+    return "🎓 Дистанционное обучение\n\n" + f"📚 Материалы для группы {TARGET_GROUP} ({TARGET_COURSE})\n\n" + f"🔗 {CLOUD_URL}\n\n" + f"Что делать:\n" + f"1. Нажмите «{TARGET_COURSE}»\n" + f"2. Затем «{TARGET_GROUP}»\n" + f"3. Внутри — файлы и задания"
 
 
 def get_main_keyboard():
     k = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="📅 Календарь", callback_data="open_calendar")],
-        [
-            InlineKeyboardButton(text="📆 Сегодня", callback_data="quick:today"),
-            InlineKeyboardButton(text="📆 Завтра", callback_data="quick:tomorrow"),
-        ],
+        [InlineKeyboardButton(text="📆 Сегодня", callback_data="quick:today"), InlineKeyboardButton(text="📆 Завтра", callback_data="quick:tomorrow")],
         [InlineKeyboardButton(text="🎓 Дистанционное обучение", callback_data="distance")],
     ])
     return k
 
 
 def get_distance_keyboard():
-    k = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")],
-    ])
+    k = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")]])
     return k
 
 
@@ -577,18 +524,12 @@ def get_days_keyboard(month_name, range_label, dates, page=1):
 
 @dp.message(CommandStart())
 async def start_handler(message: Message):
-    await message.answer(
-        f"👋 Привет! Я слежу за расписанием группы {TARGET_GROUP}.",
-        reply_markup=get_main_keyboard(),
-    )
+    await message.answer(f"👋 Привет! Я слежу за расписанием группы {TARGET_GROUP}.", reply_markup=get_main_keyboard())
 
 
 @dp.callback_query(lambda c: c.data == "main_menu")
 async def main_menu_cb(callback: CallbackQuery):
-    await callback.message.edit_text(
-        f"👋 Главное меню. Группа {TARGET_GROUP}.",
-        reply_markup=get_main_keyboard(),
-    )
+    await callback.message.edit_text(f"👋 Главное меню. Группа {TARGET_GROUP}.", reply_markup=get_main_keyboard())
     await callback.answer()
 
 
@@ -600,10 +541,7 @@ async def open_calendar_cb(callback: CallbackQuery):
         await callback.answer()
         return
     total = (len(months) + MONTHS_PER_PAGE - 1) // MONTHS_PER_PAGE
-    await callback.message.edit_text(
-        f"📅 Выберите месяц (страница 1 из {total}):",
-        reply_markup=get_months_keyboard(months, page=1),
-    )
+    await callback.message.edit_text(f"📅 Выберите месяц (страница 1 из {total}):", reply_markup=get_months_keyboard(months, page=1))
     await callback.answer()
 
 
@@ -612,10 +550,7 @@ async def months_page_cb(callback: CallbackQuery):
     page = int(callback.data.split(":")[1])
     months = await asyncio.to_thread(get_months_with_dates)
     total = (len(months) + MONTHS_PER_PAGE - 1) // MONTHS_PER_PAGE
-    await callback.message.edit_text(
-        f"📅 Выберите месяц (страница {page} из {total}):",
-        reply_markup=get_months_keyboard(months, page=page),
-    )
+    await callback.message.edit_text(f"📅 Выберите месяц (страница {page} из {total}):", reply_markup=get_months_keyboard(months, page=page))
     await callback.answer()
 
 
@@ -629,10 +564,7 @@ async def month_cb(callback: CallbackQuery):
         await callback.answer()
         return
     ranges = get_available_ranges(mn, dates)
-    await callback.message.edit_text(
-        f"📅 {mn}. Выберите диапазон:",
-        reply_markup=get_ranges_keyboard(mn, ranges),
-    )
+    await callback.message.edit_text(f"📅 {mn}. Выберите диапазон:", reply_markup=get_ranges_keyboard(mn, ranges))
     await callback.answer()
 
 
@@ -648,10 +580,7 @@ async def range_cb(callback: CallbackQuery):
         await callback.answer()
         return
     total = (len(filtered) + DATES_PER_PAGE - 1) // DATES_PER_PAGE
-    await callback.message.edit_text(
-        f"📅 {mn}, {rl} — страница 1 из {total}.\nВыберите день:",
-        reply_markup=get_days_keyboard(mn, rl, filtered, page=1),
-    )
+    await callback.message.edit_text(f"📅 {mn}, {rl} — страница 1 из {total}.\nВыберите день:", reply_markup=get_days_keyboard(mn, rl, filtered, page=1))
     await callback.answer()
 
 
@@ -664,10 +593,7 @@ async def page_cb(callback: CallbackQuery):
     dates = data.get(mn, [])
     filtered = filter_by_range_label(dates, rl)
     total = (len(filtered) + DATES_PER_PAGE - 1) // DATES_PER_PAGE
-    await callback.message.edit_text(
-        f"📅 {mn}, {rl} — страница {page} из {total}.\nВыберите день:",
-        reply_markup=get_days_keyboard(mn, rl, filtered, page=page),
-    )
+    await callback.message.edit_text(f"📅 {mn}, {rl} — страница {page} из {total}.\nВыберите день:", reply_markup=get_days_keyboard(mn, rl, filtered, page=page))
     await callback.answer()
 
 
@@ -677,10 +603,7 @@ async def back_ranges_cb(callback: CallbackQuery):
     data = await asyncio.to_thread(get_api_data)
     dates = data.get(mn, [])
     ranges = get_available_ranges(mn, dates)
-    await callback.message.edit_text(
-        f"📅 {mn}. Выберите диапазон:",
-        reply_markup=get_ranges_keyboard(mn, ranges),
-    )
+    await callback.message.edit_text(f"📅 {mn}. Выберите диапазон:", reply_markup=get_ranges_keyboard(mn, ranges))
     await callback.answer()
 
 
@@ -749,4 +672,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
