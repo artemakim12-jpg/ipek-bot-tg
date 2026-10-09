@@ -101,7 +101,7 @@ def extract_month_from_text(t):
             return n
     return None
     def get_cloud_signature():
-    h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        h = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     try:
         r = requests.get(CLOUD_URL, headers=h, timeout=20)
         r.raise_for_status()
