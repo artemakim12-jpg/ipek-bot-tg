@@ -567,8 +567,10 @@ def get_days_keyboard(month_name, range_label, dates, page=1):
         rows.append(nav)
     rows.append([InlineKeyboardButton(text=f"📅 Диапазоны {month_name}", callback_data=f"back_ranges:{month_name}")])
     rows.append([InlineKeyboardButton(text="🏠 В меню", callback_data="main_menu")])
-    return InlineKeyboardMarkup(inline_keyboard=rows)
-    @dp.message(CommandStart())
+        return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+@dp.message(CommandStart())
 async def start_handler(message: Message):
     await message.answer(
         f"👋 Привет! Я слежу за расписанием группы {TARGET_GROUP}.",
