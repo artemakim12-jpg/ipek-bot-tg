@@ -98,6 +98,8 @@ def extract_month_from_text(t):
         if name in tl:
             return n
     return None
+
+
 def get_cloud_signature():
     h = {"User-Agent": "Mozilla/5.0"}
     try:
@@ -109,6 +111,7 @@ def get_cloud_signature():
     soup = BeautifulSoup(r.text, "html.parser")
     parts = []
     for tr in soup.find_all("tr"):
+        ...
         cells = tr.find_all(["td", "th"])
         if len(cells) < 2:
             continue
